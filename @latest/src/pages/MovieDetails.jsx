@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
-import { getMovieDetails } from "../services/tmdb";
+import { getMovieDetails, getMovieRecommendations } from "../services/tmdb";
+
 import { addToMyList, removeFromMyList, isInMyList } from "../utils/myList";
+
 import MovieDetailsSkeleton from "../components/MovieDetailsSkeleton";
+
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
 function MovieDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [movie, setMovie] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inMyList, setInMyList] = useState(false);
@@ -16,12 +22,20 @@ function MovieDetails() {
   useEffect(() => {
     async function loadMovie() {
       try {
-        const data = await getMovieDetails(id);
+        setLoading(true);
+        setError("");
 
-        setMovie(data);
-        setInMyList(isInMyList(data.id));
+        const [movieData, recommendationData] = await Promise.all([
+          getMovieDetails(id),
+          getMovieRecommendations(id),
+        ]);
+
+        setMovie(movieData);
+        setRecommendations(recommendationData);
+        setInMyList(isInMyList(movieData.id));
       } catch (error) {
-        setError(error.message);
+        console.error(error);
+        setError("Failed to load movie.");
       } finally {
         setLoading(false);
       }
@@ -47,57 +61,41 @@ function MovieDetails() {
   }
 
   if (error) {
-    return (
-      <div className="details-status">
-        <p>{error}</p>
-      </div>
-    );
+    return <p className="status-message">{error}</p>;
   }
 
-  if (!movie) {
-    return null;
-  }
+  if (!movie) return null;
 
   const backdropUrl = movie.backdrop_path
     ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
     : "";
 
   const posterUrl = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "";
 
   return (
     <main className="movie-details">
-      {/* BACKDROP */}
       <div
         className="details-backdrop"
-        style={{
-          backgroundImage: `url(${backdropUrl})`,
-        }}
-      />
+        style={{ backgroundImage: `url(${backdropUrl})` }}
+      >
+        <div className="details-overlay"></div>
+      </div>
 
-      <div className="details-overlay" />
-
-      {/* CONTENT */}
       <div className="details-content">
         <button className="back-button" onClick={() => navigate(-1)}>
           ← Back
         </button>
 
         <div className="details-layout">
-          {/* POSTER */}
-          <div className="details-poster-wrapper">
-            <img className="details-poster" src={posterUrl} alt={movie.title} />
-          </div>
+          <img className="details-poster" src={posterUrl} alt={movie.title} />
 
-          {/* INFORMATION */}
           <div className="details-info">
-            <span className="details-label">MOVIE</span>
-
             <h1>{movie.title}</h1>
 
             <div className="details-meta">
-              <span>⭐ {movie.vote_average?.toFixed(1)}</span>
+              <span>★ {movie.vote_average?.toFixed(1)}</span>
 
               <span>
                 {movie.release_date ? movie.release_date.slice(0, 4) : "N/A"}
@@ -112,34 +110,60 @@ function MovieDetails() {
               {movie.overview || "No description available."}
             </p>
 
-            {/* GENRES */}
             <div className="details-genres">
               {movie.genres?.map((genre) => (
                 <span key={genre.id}>{genre.name}</span>
               ))}
             </div>
 
-            {/* BUTTONS */}
             <div className="details-actions">
-              <div className="details-actions">
-                <button
-                  className="watch-button"
-                  onClick={() => navigate(`/watch/${movie.id}`)}
-                >
-                  ▶ Watch Now
-                </button>
+              <button
+                className="watch-button"
+                onClick={() => navigate(`/watch/${movie.id}`)}
+              >
+                ▶ Watch Now
+              </button>
 
-                <button className="secondary-button" onClick={handleMyList}>
-                  {inMyList ? "✓ Remove from My List" : "+ Add to My List"}
-                </button>
-              </div>
-
-              <button className="secondary-button" onClick={() => navigate(-1)}>
-                ← Back
+              <button className="secondary-button" onClick={handleMyList}>
+                {inMyList ? "✓ Remove from My List" : "+ Add to My List"}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Recommendations */}
+        {recommendations.length > 0 && (
+          <section className="recommendations-section">
+            <div className="recommendations-header">
+              <h2>You Might Also Like</h2>
+            </div>
+
+            <div className="recommendations-row">
+              {recommendations.slice(0, 10).map((recommendedMovie) => (
+                <div
+                  className="recommendation-card"
+                  key={recommendedMovie.id}
+                  onClick={() => navigate(`/movie/${recommendedMovie.id}`)}
+                >
+                  {recommendedMovie.poster_path ? (
+                    <img
+                      src={`${IMAGE_BASE_URL}${recommendedMovie.poster_path}`}
+                      alt={recommendedMovie.title}
+                    />
+                  ) : (
+                    <div className="recommendation-no-poster">No Poster</div>
+                  )}
+
+                  <div className="recommendation-info">
+                    <h3>{recommendedMovie.title}</h3>
+
+                    <p>⭐ {recommendedMovie.vote_average?.toFixed(1)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

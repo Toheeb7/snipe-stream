@@ -125,3 +125,16 @@ export async function getMoviesByCategory(category, page = 1) {
 
   return data;
 }
+export async function getMovieRecommendations(movieId) {
+  const response = await fetch(
+    `${BASE_URL}/movie/${movieId}/recommendations?api_key=${API_KEY}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch movie recommendations");
+  }
+
+  const data = await response.json();
+
+  return data.results || [];
+}

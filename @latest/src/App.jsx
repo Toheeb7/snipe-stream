@@ -10,6 +10,8 @@ import Navbar from "./components/Navbar";
 import MyList from "./pages/MyList";
 import Category from "./pages/Category";
 import MovieSkeleton from "./components/MovieSkeleton";
+import Footer from "./components/Footer";
+import About from "./pages/About";
 
 import {
   getPopularMovies,
@@ -120,7 +122,9 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/my-list" element={<MyList />} />
         <Route path="/category/:category" element={<Category />} />
+        <Route path="/about" element={<About />} />
       </Routes>
+      <Footer />
     </>
   );
 }

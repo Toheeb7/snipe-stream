@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { getMovieDetails, getMovieVideos } from "../services/tmdb";
-
+import WatchSkeleton from "../components/WatchSkeleton";
 function Watch() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ function Watch() {
   }, [id]);
 
   if (loading) {
-    return <div className="watch-status">Loading movie...</div>;
+    return <WatchSkeleton />;
   }
 
   if (error) {

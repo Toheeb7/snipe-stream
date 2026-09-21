@@ -31,6 +31,13 @@ function Navbar() {
           <Link to="/my-list" onClick={closeMenu}>
             My List
           </Link>
+          <Link
+            to="/about"
+            onClick={closeMenu}
+            className={({ isActive }) => (isActive ? "active-link" : "")}
+          >
+            About
+          </Link>
 
           <Link to="/search" onClick={closeMenu}>
             🔍 Search
